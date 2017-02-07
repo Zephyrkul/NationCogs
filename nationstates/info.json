@@ -4,5 +4,6 @@
     "NAME" : "NationStates",
     "SHORT" : "Gets general information about a nation or region",
     "DESCRIPTION" : "Gets information about a nation or region, pretties it up, and embeds the result",
+    "REQUIREMENTS" : ["nationstates"],
     "TAGS" : ["nationstates", "utility"]
 }
