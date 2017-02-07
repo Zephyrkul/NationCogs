@@ -1,0 +1,8 @@
+{
+    "AUTHOR" : "Zephyrkul",
+    "INSTALL_MSG" : "`[p]nation` and `[p]region`. Quotes are *not* needed for the argument.",
+    "NAME" : "NationStates",
+    "SHORT" : "Gets general information about a nation or region",
+    "DESCRIPTION" : "Gets information about a nation or region, pretties it up, and embeds the result",
+    "TAGS" : ["nationstates", "utility"]
+}
