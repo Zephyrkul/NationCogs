@@ -26,7 +26,7 @@ class NationStates:
         if agent is None:
             self.settings = dataIO.load_json('data/nationstates/settings.json')
             if self.settings['AGENT'] is not None:
-                await self.bot.say(box('User agent change detected. Updating...', lang='diff'))
+                await self.bot.say('```User agent change detected. Updating...```')
                 self.api.user_agent = self.settings['AGENT']
             await self.bot.say(box(self.api.user_agent, lang='diff'))
             await send_cmd_help(ctx)
