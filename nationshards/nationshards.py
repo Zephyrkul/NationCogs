@@ -34,10 +34,10 @@ class NationShards:
         Use an informative agent, like an email address. Contact the cog creator (and disable this cog) if you get any threatening emails."""
         if agent is None:
             self.settings = dataIO.load_json('data/nationstates/settings.json')
-            if self.settings['AGENT'] is not None:
+            if self.settings['AGENT'] != self.api.user_agent:
                 await self.bot.say(box('User agent change detected. Updating...', lang='diff'))
                 self.api.user_agent = self.settings['AGENT']
-            await self.bot.whisper(box(self.api.user_agent, lang='diff'))
+            await self.bot.whisper(box('User agent: %s' % self.api.user_agent, lang='diff'))
             await send_cmd_help(ctx)
         else:
             self.settings['AGENT'] = agent
