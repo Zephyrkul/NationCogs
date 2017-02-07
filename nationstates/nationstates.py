@@ -28,13 +28,13 @@ class NationStates:
             if self.settings['AGENT'] is not None:
                 await self.bot.say('```User agent change detected. Updating...```')
                 self.api.user_agent = self.settings['AGENT']
-            await self.bot.say(box(self.api.user_agent, lang='diff'))
+            await self.bot.say('```%s```' % self.api.user_agent)
             await send_cmd_help(ctx)
         else:
             self.settings['AGENT'] = agent
             dataIO.save_json('data/nationstates/settings.json', self.settings)
             self.api.user_agent = self.settings['AGENT']
-            await self.bot.say(box('New user agent: %s' % self.api.user_agent, lang='diff'))
+            await self.bot.say('```New user agent: %s```' % self.api.user_agent)
 
     @commands.command()
     async def nation(self, *, nation):
