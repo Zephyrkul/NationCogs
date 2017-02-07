@@ -1,6 +1,6 @@
 {
     "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "`[p]nation` and `[p]region`. Quotes are *not* needed for the argument.",
+    "INSTALL_MSG" : "`[p]nation` and `[p]region`. Quotes are *not* needed for the argument.\nIf this is your first install, use `[p]agent` before continuing.",
     "NAME" : "NationStates",
     "SHORT" : "Gets general information about a nation or region",
     "DESCRIPTION" : "Gets information about a nation or region, pretties it up, and embeds the result",
