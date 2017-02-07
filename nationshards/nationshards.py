@@ -3,8 +3,11 @@ try:
 except:
     ns = None
 import discord
+import os
 from .utils.chat_formatting import pagify, box
+from cogs.utils import checks
 from discord.ext import commands
+from .utils.dataIO import dataIO
 from __main__ import send_cmd_help
 from random import choice
 
@@ -12,13 +15,27 @@ class NationShards:
 
     def __init__(self, bot):
         self.bot = bot
-        self.api = ns.Api('zephyrkul@outlook.com')
+        self.settings = dataIO.load_json('data/nationshards/settings.json')
+        self.api = ns.Api(self.settings['AGENT'])
+
+    @commands.command()
+    @checks.is_owner()
+    async def agent(self, *, agent : str):
+        """Sets the user agent for use with the NationStates API
+
+        Use an informative agent, like an email address. Contact the cog creator (and disable this cog) if you get any threatening emails."""
+        self.settings['AGENT'] = agent
+        dataIO.save_json('data/nationstates/settings.json', self.settings)
+        self.api.user_agent = self.settings['AGENT']
 
     @commands.group(aliases=['shards'], pass_context=True)
     async def shard(self, ctx):
         """Retrieves the specified info from NationStates
 
         Note that some shards provide a lot of data at once; have [p]restart prepared just in case."""
+        if self.api.user_agent is None:
+            await self.bot.say('User agent is not yet set! Set it with `[p]agent` first.')
+            return
         if ctx.invoked_subcommand is None:
             await send_cmd_help(ctx)
 
@@ -99,7 +116,20 @@ class NationShards:
     def _dict_format(self, base : str, data : dict):
         return base.join('%s : %s'%(key,'%s >%s'%(base, self._dict_format('%s >'%base,value) if isinstance(value,dict) else value)) for key,value in data.items())
 
+def check_folders():
+    if not os.path.exists('data/nationshards'):
+        print('Creating data/nationshards folder...')
+        os.makedirs('data/nationshards')
+
+def check_files():
+    f = 'data/nationshards/settings.json'
+    data = {'AGENT' : ''}
+    if not dataIO.is_valid_json(f):
+        dataIO.save_json(f, data)
+
 def setup(bot):
     if ns is None:
         raise RuntimeError('You\'re missing the NationStates library.\nInstall it with "pip install nationstates" and reload the module.')
+    check_folders()
+    check_files()
     bot.add_cog(NationShards(bot))
