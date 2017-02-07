@@ -28,7 +28,7 @@ class NationStates:
             if self.settings['AGENT'] is not None:
                 await self.bot.say('```User agent change detected. Updating...```')
                 self.api.user_agent = self.settings['AGENT']
-            await self.bot.say('```%s```' % self.api.user_agent)
+            await self.bot.whisper('```%s```' % self.api.user_agent)
             await send_cmd_help(ctx)
         else:
             self.settings['AGENT'] = agent
