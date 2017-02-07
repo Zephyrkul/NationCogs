@@ -3,6 +3,6 @@
     "SHORT" : "Say a random guard line from Skyrim",
     "DESCRIPTION" : "Say a random guard line from Skyrim\nWARNING: SPOILERS FOR SKYRIM",
     "NAME" : "GuardLines",
-    "TAGS" : ["skyrim", "fun"],
+    "TAGS" : ["skyrim", "gaming", "fun"],
     "INSTALL_MSG" : "Usage: `[p]guard`"
 }
