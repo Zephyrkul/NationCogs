@@ -17,15 +17,19 @@ class NationStates:
         self.settings = dataIO.load_json('data/nationstates/settings.json')
         self.api = ns.Api(self.settings['AGENT'])
 
-    @commands.command()
+    @commands.command(pass_context=True)
     @checks.is_owner()
-    async def agent(self, *, agent : str):
-        """Sets the user agent for use with the NationStates API
+    async def agent(self, ctx, *, agent : str = None):
+        """Gets or sets the user agent for use with the NationStates API
 
         Use an informative agent, like an email address. Contact the cog creator (and disable this cog) if you get any threatening emails."""
-        self.settings['AGENT'] = agent
-        dataIO.save_json('data/nationstates/settings.json', self.settings)
-        self.api.user_agent = self.settings['AGENT']
+        if agent is None:
+            await self.bot.say('```%s```' % self.api.user_agent)
+            await send_cmd_help(ctx)
+        else:
+            self.settings['AGENT'] = agent
+            dataIO.save_json('data/nationstates/settings.json', self.settings)
+            self.api.user_agent = self.settings['AGENT']
 
     @commands.command()
     async def nation(self, *, nation):
