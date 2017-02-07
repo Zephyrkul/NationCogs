@@ -13,7 +13,7 @@ class NationStates:
         self.bot = bot
         self.api = ns.Api('zephyrkul@outlook.com')
 
-    @commands.command(aliases=['n'])
+    @commands.command()
     async def nation(self, *, nation):
         """Retrieves info about a specified NationStates nation"""
         if nation[0] == nation[-1] and nation.startswith('"'):
@@ -47,7 +47,7 @@ class NationStates:
         except discord.HTTPException:
             await self.bot.say('I need the `Embed links` permission to send this')
 
-    @commands.command(aliases=['r'])
+    @commands.command()
     async def region(self, *, region):
         """Retrieves info about a specified NationStates region"""
         if region[0] == region[-1] and region.startswith('"'):
