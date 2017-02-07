@@ -1,0 +1,8 @@
+{
+    "AUTHOR" : "Zephyrkul (edited from a cog by Airen and JennJenn)",
+    "SHORT" : "Say a random guard line from Skyrim",
+    "DESCRIPTION" : "Say a random guard line from Skyrim\nWARNING: SPOILERS FOR SKYRIM",
+    "NAME" : "GuardLines",
+    "TAGS" : ["skyrim", "fun"],
+    "INSTALL_MSG" : "Usage: `[p]guard`"
+}
