@@ -33,11 +33,17 @@ class NationShards:
 
         Use an informative agent, like an email address. Contact the cog creator (and disable this cog) if you get any threatening emails."""
         if agent is None:
+            self.settings = dataIO.load_json('data/nationstates/settings.json')
+            if self.settings['AGENT'] is not None:
+                await self.bot.say(box('User agent change detected. Updating...', lang='diff'))
+                self.api.user_agent = self.settings['AGENT']
             await self.bot.say(box(self.api.user_agent, lang='diff'))
             await send_cmd_help(ctx)
-        self.settings['AGENT'] = agent
-        dataIO.save_json('data/nationstates/settings.json', self.settings)
-        self.api.user_agent = self.settings['AGENT']
+        else:
+            self.settings['AGENT'] = agent
+            dataIO.save_json('data/nationstates/settings.json', self.settings)
+            self.api.user_agent = self.settings['AGENT']
+            await self.bot.say(box('New user agent: %s' % self.api.user_agent, lang='diff'))
 
     @shard.command(name='nation', aliases=['n'], pass_context=True)
     async def _shard_nation(self, ctx, nation, *shards):
