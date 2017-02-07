@@ -37,7 +37,7 @@ class NationShards:
             if self.settings['AGENT'] is not None:
                 await self.bot.say(box('User agent change detected. Updating...', lang='diff'))
                 self.api.user_agent = self.settings['AGENT']
-            await self.bot.say(box(self.api.user_agent, lang='diff'))
+            await self.bot.whisper(box(self.api.user_agent, lang='diff'))
             await send_cmd_help(ctx)
         else:
             self.settings['AGENT'] = agent
