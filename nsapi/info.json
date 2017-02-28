@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "Zephyrkul",
+    "INSTALL_MSG" : "Use `[p]agent` to set the user agent. Remember to use something informative, like your email address and/or nation name.",
+    "NAME" : "NSApi",
+    "SHORT" : "Controls NationStates API access and settings.",
+    "DESCRIPTION" : "Controls base settings and access to the NationStates API. Required for all other NS cogs.",
+    "REQUIREMENTS" : ["nationstates"],
+    "TAGS" : ["nationstates", "utility"]
+}

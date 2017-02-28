@@ -1,11 +1,13 @@
+import os
+from random import choice
+
 import discord
 from discord.ext import commands
+
 from .utils.dataIO import dataIO
-from random import choice
-import os
+
 
 class GuardLines:
-    """Adapted from Airenkun's Insult Cog from 26-Cogs"""
 
     def __init__(self, bot):
         self.bot = bot

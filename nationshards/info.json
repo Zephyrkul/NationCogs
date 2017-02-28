@@ -1,9 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "`[p]shard`. Quotes *are* needed if the argument contains spaces.\nIf this is your first install, use `[p]shard agent` before continuing.\n\n**NOTE:** This cog reads and writes data from the related nationstates cog's subfolder, creating the folder if that cog is not installed.",
-    "NAME" : "NationShards",
-    "SHORT" : "Gets specific information from the NationStates API",
-    "DESCRIPTION" : "Gets information from NationStates, pretties it up a little bit, and posts the result",
-    "REQUIREMENTS" : ["nationstates"],
-    "TAGS" : ["nationstates", "utility"]
-}
