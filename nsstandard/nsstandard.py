@@ -13,7 +13,7 @@ class NSStandard:
     def __init__(self, bot):
         self.bot = bot
         self.nsapi = None
-        self.illion = ["million", "billion", "trillion"]
+        self.illion = ["million", "billion", "trillion", "quadrillion"]
         self.zday = False # Global flag for Z-Day, since I don't see a way to detect it automatically
 
     @commands.command(pass_context=True)
@@ -22,7 +22,17 @@ class NSStandard:
         self._checks(ctx.prefix)
         if nation[0] == nation[-1] and nation.startswith("\""):
             nation = nation[1:-1]
-        data = self.nsapi.api("category", "demonym2plural", "flag", "founded", "freedom", "fullname", "influence", "lastactivity", "motto", "population", "region", "wa", "zombie" if self.zday else "fullname", self.nsapi.shard("census", scale="65+66", mode="score"), nation=nation).collect()
+        try:
+            data = self.nsapi.api("category", "demonym2plural", "flag", "founded", "freedom", "fullname", "influence", "lastactivity", "motto", "population", "region", "wa", "zombie" if self.zday else "fullname", self.nsapi.shard("census", scale="65+66", mode="score"), nation=nation).collect()
+        except ValueError:
+            embed = discord.Embed(title=nation.replace("_", " ").title(), url="https://www.nationstates.net/page=boneyard?nation={}".format(nation.replace(" ", "_").lower()), description="This nation does not exist.")
+            embed.set_author(name="NationStates", url="https://www.nationstates.net/")
+            embed.set_thumbnail(url="https://www.nationstates.net/images/flags/exnation.png")
+            try:
+                await self.bot.say(embed=embed)
+            except discord.HTTPException:
+                await self.bot.say("I need the `Embed links` permission to send this")
+            return
         regdata = self.nsapi.api("founder", region=data["region"]).collect()
         found = ""
         if regdata["founder"] == data["id"]:
@@ -107,8 +117,8 @@ class NSStandard:
         index = 0
         while num >= 1000:
             index += 1
-            num = round(num) / 1e3
-        return "{} {}".format(num, self.illion[index])
+            num = num / 1e3
+        return "{} {}".format(round(num, 3), self.illion[index])
 
     def _checks(self, prefix):
         if self.nsapi is None or self.nsapi != self.bot.get_cog("NSApi"):
