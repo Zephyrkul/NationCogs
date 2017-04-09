@@ -5,6 +5,7 @@ from random import choice
 import discord
 from discord.ext import commands
 
+from cogs.utils.chat_formatting import pagify
 from .utils.dataIO import dataIO
 from __main__ import send_cmd_help
 
@@ -37,10 +38,15 @@ class Theme:
         if ctx.invoked_subcommand is None:
             await send_cmd_help(ctx)
             try:
-                await self.bot.say("```Your themes: {}```".format(", ".join(
-                    self.themes[ctx.message.author.id])))
+                message = "Your themes:\n\t{}".format("\n\t".join(
+                    self.themes[ctx.message.author.id]))
             except KeyError:
-                pass
+                return
+            if len(message) > 1000:
+                for page in pagify(message):
+                    await self.bot.whisper("```{}```".format(page.strip()))
+            else:
+                await self.bot.say("```{}```".format(message))
 
     @themeset.command(name="add", pass_context=True)
     async def _themeset_add(self, ctx, theme):
