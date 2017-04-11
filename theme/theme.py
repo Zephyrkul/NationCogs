@@ -14,8 +14,6 @@ class Theme:
     def __init__(self, bot):
         self.bot = bot
         self._themes = dataIO.load_json("data/themes/themes.json")
-        if self.bot.get_cog("Audio") is None:
-            raise RuntimeError("This cog requires the Audio cog.")
 
     @commands.command(pass_context=True, no_pm=True)
     async def theme(self, ctx, user: discord.Member=None):
