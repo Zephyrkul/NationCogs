@@ -93,7 +93,7 @@ class NSAssembly:
                 del data["delvotes_against"]["delegate"][10:]
         embed = discord.Embed(title=data["name"], url="https://www.nationstates.net/page=UN_delegate_votes/council={}".format(2 if sc else 1) if delegate else "https://www.nationstates.net/page={}".format("sc" if sc else "ga"),
                               description="Category: {}".format(data["category"]), colour=randint(0, 0xFFFFFF))
-        authdata = self.nsapi.api(
+        authdata = await self.nsapi.api(
             "fullname", "flag", nation=data["proposed_by"])
         embed.set_author(name=authdata["fullname"], url="https://www.nationstates.net/nation={}".format(
             data["proposed_by"]), icon_url=authdata["flag"])
