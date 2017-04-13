@@ -16,7 +16,7 @@ class NSAssembly:
     @commands.group(pass_context=True)
     async def ga(self, ctx):  # API requests: 2; non-API requests: 2
         """Retrieves info on the current General Assembly resolution"""
-        res = await self._res_format(ctx, sc=False)
+        res = self._res_format(ctx, sc=False)
         message = None
         for page in res[0]:
             if page is not None:
@@ -42,7 +42,7 @@ class NSAssembly:
     @commands.group(pass_context=True)
     async def sc(self, ctx):  # API requests: 2; non-API requests: 2
         """Retrieves info on the current Security Council resolution"""
-        res = await self._res_format(ctx, sc=True)
+        res = self._res_format(ctx, sc=True)
         message = None
         for page in res[0]:
             if page is not None:
@@ -65,7 +65,7 @@ class NSAssembly:
         """Also retrieves the top Delegate votes"""
         pass
 
-    async def _res_format(self, ctx, *, sc: bool):
+    def _res_format(self, ctx, *, sc: bool):
         self._checks(ctx.prefix)
         delegate = str(ctx.invoked_subcommand).lower() == "{} delegate".format(
             "sc" if sc else "ga")
