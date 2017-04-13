@@ -23,7 +23,7 @@ class NSStandard:
         if nation[0] == nation[-1] and nation.startswith("\""):
             nation = nation[1:-1]
         try:
-            data = self.nsapi.api("category", "demonym2plural", "flag", "founded", "freedom", "fullname", "influence", "lastactivity", "motto", "population", "region", "wa", "zombie" if self.zday else "fullname", self.nsapi.shard("census", scale="65+66", mode="score"), nation=nation).collect()
+            data = await self.nsapi.api("category", "demonym2plural", "flag", "founded", "freedom", "fullname", "influence", "lastactivity", "motto", "population", "region", "wa", "zombie" if self.zday else "fullname", self.nsapi.shard("census", scale="65+66", mode="score"), nation=nation).collect()
         except ValueError:
             embed = discord.Embed(title=nation.replace("_", " ").title(), url="https://www.nationstates.net/page=boneyard?nation={}".format(nation.replace(" ", "_").lower()), description="This nation does not exist.")
             embed.set_author(name="NationStates", url="https://www.nationstates.net/")
@@ -33,7 +33,7 @@ class NSStandard:
             except discord.HTTPException:
                 await self.bot.say("I need the `Embed links` permission to send this")
             return
-        regdata = self.nsapi.api("founder", region=data["region"]).collect()
+        regdata = await self.nsapi.api("founder", region=data["region"]).collect()
         found = ""
         if regdata["founder"] == data["id"]:
             found = " (Founder)"
@@ -65,11 +65,11 @@ class NSStandard:
         self._checks(ctx.prefix)
         if region[0] == region[-1] and region.startswith("\""):
             region = region[1:-1]
-        data = self.nsapi.api("delegate", "delegateauth", "flag", "founded", "founder", "name", "numnations", "power", "tags", "zombie" if self.zday else "name", region=region).collect()
+        data = await self.nsapi.api("delegate", "delegateauth", "flag", "founded", "founder", "name", "numnations", "power", "tags", "zombie" if self.zday else "name", region=region).collect()
         if data["delegate"] == "0":
             data["delegate"] = "No Delegate"
         else:
-            deldata = self.nsapi.api("fullname", "influence", self.nsapi.shard(
+            deldata = await self.nsapi.api("fullname", "influence", self.nsapi.shard(
                 "census", scale="65+66", mode="score"), nation=data["delegate"]).collect()
             endo = int(float(deldata["census"]["scale"][1]["score"]))
             if endo == 1:
@@ -89,7 +89,7 @@ class NSStandard:
         else:
             try:
                 data["founder"] = "[{}](https://www.nationstates.net/nation={})".format(
-                    self.nsapi.api("fullname", nation=data["founder"]).collect()["fullname"], data["founder"])
+                    await self.nsapi.api("fullname", nation=data["founder"]).collect()["fullname"], data["founder"])
             except ValueError:
                 data["founder"] = "{} (Ceased to Exist)".format(data[
                     "founder"].replace("_", " ").capitalize())

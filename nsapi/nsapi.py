@@ -1,8 +1,6 @@
-try:
-    import nationstates as ns
-except ImportError:
-    ns = None
+import nationstates as ns
 import os
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -43,7 +41,7 @@ class NSApi:
     def shard(self, shard: str, **kwargs):
         return ns.Shard(shard, **kwargs)
 
-    def api(self, *shards, **kwargs):
+    async def api(self, *shards, **kwargs):
         try:
             if not kwargs:
                 return self._api.get_world(list(shards))
@@ -54,12 +52,17 @@ class NSApi:
             council = kwargs.pop("council", None)
             if kwargs:
                 raise TypeError("Unexpected **kwargs: {}".format(kwargs))
+            run = self.bot.loop.run_in_executor
             if nation:
-                return self._api.get_nation(nation, list(shards))
+                task = run(self._api.get_nation(nation, list(shards)))
             if region:
-                return self._api.get_region(region, list(shards))
+                task = run(self._api.get_region(region, list(shards)))
             if council:
-                return self._api.get_wa(council, list(shards))
+                task = run(self._api.get_wa(council, list(shards)))
+            try:
+                return await asyncio.wait_for(task, timeout=10)
+            except asyncio.TimeoutError:
+                await self.bot.say("Error: Request timed out.")
         except ns.NScore.exceptions.NotFound as e:
             raise ValueError(*e.args) from e
 
@@ -79,9 +82,6 @@ def check_files():
 
 
 def setup(bot):
-    if ns is None:
-        raise RuntimeError(
-            "NationStates API wrapper not found.\nPlease update your bot from the launcher and/or install the wrapper:\n{p}debug bot.pip_install(\"nationstates\")".format(p=bot.settings.prefixes[0]))
     check_folders()
     check_files()
     bot.add_cog(NSApi(bot))

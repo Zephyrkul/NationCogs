@@ -41,7 +41,7 @@ class NSShard:
         self._checks(ctx.prefix)
         if nation[0] == nation[-1] and nation.startswith('"'):
             nation = nation[1:-1]
-        data = self.nsapi.api(*shards, nation=nation).collect()
+        data = await self.nsapi.api(*shards, nation=nation).collect()
         strdata = self._dict_format('\n', data)
         if len(strdata) > self.limit:
             format_str = "```{}...```\n\nToo much data. You may view the rest of this data here:\n\nhttps://www.nationstates.net/cgi-bin/api.cgi?nation={}&q={}".format("{}", data["id"], "+".join(shards))
@@ -64,7 +64,7 @@ class NSShard:
         self._checks(ctx.prefix)
         if region[0] == region[-1] and region.startswith('"'):
             region = region[1:-1]
-        data = self.nsapi.api(*shards, region=region).collect()
+        data = await self.nsapi.api(*shards, region=region).collect()
         strdata = self._dict_format('\n', data)
         if len(strdata) > self.limit:
             format_str = "```{}...```\n\nToo much data. You may view the rest of this data here:\n\nhttps://www.nationstates.net/cgi-bin/api.cgi?region={}&q={}".format("{}", data["id"], "+".join(shards))
@@ -83,7 +83,7 @@ class NSShard:
             await send_cmd_help(ctx)
             return
         self._checks(ctx.prefix)
-        data = self.nsapi.api(*shards).collect()
+        data = await self.nsapi.api(*shards).collect()
         strdata = self._dict_format('\n', data)
         if len(strdata) > self.limit:
             format_str = "```{}...```\n\nToo much data. You may view the rest of this data here:\n\nhttps://www.nationstates.net/cgi-bin/api.cgi?q={}".format("{}", "+".join(shards))
@@ -111,7 +111,7 @@ class NSShard:
         elif council != '1' and council != '2':
             raise TypeError(
                 'Parameter council must be either 1 (GA) or 2 (SC).')
-        data = self.nsapi.api(*shards, council=council).collect()
+        data = await self.nsapi.api(*shards, council=council).collect()
         strdata = self._dict_format('\n', data)
         if len(strdata) > self.limit:
             format_str = "```{}...```\n\nToo much data. You may view the rest of this data here:\n\nhttps://www.nationstates.net/cgi-bin/api.cgi?wa={}&q={}".format("{}", council, "+".join(shards))
