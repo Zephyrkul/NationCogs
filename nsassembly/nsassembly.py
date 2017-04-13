@@ -69,7 +69,7 @@ class NSAssembly:
         self._checks(ctx.prefix)
         delegate = str(ctx.invoked_subcommand).lower() == "{} delegate".format(
             "sc" if sc else "ga")
-        data = await self.nsapi.api(
+        data = self.nsapi.api(
             "resolution", "delvotes" if delegate else "resolution", "lastresolution", council="2" if sc else "1").collect()
         if data["resolution"] is None:
             out = unescape(data["lastresolution"]).replace("<strong>", "**").replace("</strong>", "**")
