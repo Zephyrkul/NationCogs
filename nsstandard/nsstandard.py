@@ -8,35 +8,47 @@ from cogs.utils import checks
 
 from .utils.dataIO import dataIO
 
+
 class NSStandard:
 
     def __init__(self, bot):
         self.bot = bot
         self.nsapi = None
         self.illion = ["million", "billion", "trillion", "quadrillion"]
-        self.zday = False # Global flag for Z-Day, since I don't see a way to detect it automatically
+        # Global flag for Z-Day, since I don't see a way to detect it
+        # automatically
+        self.zday = False
 
     @commands.command(pass_context=True)
-    async def nation(self, ctx, *, nation):  # API requests: 2; non-API requests: 1
+    # API requests: 1; non-API requests: 1
+    async def nation(self, ctx, *, nation):
         """Retrieves general info about a specified NationStates nation"""
         self._checks(ctx.prefix)
-        if nation[0] == nation[-1] and nation.startswith("\""):
-            nation = nation[1:-1]
+        nation.strip("\"")
         try:
-            data = self.nsapi.api("category", "demonym2plural", "flag", "founded", "freedom", "fullname", "influence", "lastactivity", "motto", "population", "region", "wa", "zombie" if self.zday else "fullname", self.nsapi.shard("census", scale="65+66", mode="score"), nation=nation).collect()
+            data = await self.nsapi.api("category", "demonym2plural", "flag",
+                                        "founded", "freedom", "fullname",
+                                        "influence", "lastactivity", "motto",
+                                        "population", "region", "wa", "zombie"
+                                        if self.zday else "fullname",
+                                        self.nsapi.shard("census",
+                                                         scale="65+66",
+                                                         mode="score"),
+                                        nation=nation)
         except ValueError:
-            embed = discord.Embed(title=nation.replace("_", " ").title(), url="https://www.nationstates.net/page=boneyard?nation={}".format(nation.replace(" ", "_").lower()), description="This nation does not exist.")
-            embed.set_author(name="NationStates", url="https://www.nationstates.net/")
-            embed.set_thumbnail(url="https://www.nationstates.net/images/flags/exnation.png")
+            embed = discord.Embed(title=nation.replace("_", " ").title(),
+                                  url="https://www.nationstates.net/page="
+                                  "boneyard?nation={}".format(nation.replace(
+                                      " ", "_").lower()),
+                                  description="This nation does not exist.")
+            embed.set_author(name="NationStates",
+                             url="https://www.nationstates.net/")
+            embed.set_thumbnail(url="http://i.imgur.com/Pp1zO19.png")
             try:
-                await self.bot.say(embed=embed)
+                return await self.bot.say(embed=embed)
             except discord.HTTPException:
-                await self.bot.say("I need the `Embed links` permission to send this")
-            return
-        regdata = self.nsapi.api("founder", region=data["region"]).collect()
-        found = ""
-        if regdata["founder"] == data["id"]:
-            found = " (Founder)"
+                await self.bot.say(
+                    "I need the `Embed links` permission to send this")
         endo = int(float(data["census"]["scale"][1]["score"]))
         if endo == 1:
             endo = "{:d} endorsement".format(endo)
@@ -44,40 +56,84 @@ class NSStandard:
             endo = "{:d} endorsements".format(endo)
         if data["founded"] == "0":
             data["founded"] = "in Antiquity"
-        embed = discord.Embed(title=data["fullname"], url="https://www.nationstates.net/nation={}".format(data["id"]), description="[{}](https://www.nationstates.net/region={}){} | {} {} | Founded {}".format(
-            data["region"], regdata["id"], found, self._illion(data["population"]), data["demonym2plural"], data["founded"]), colour=0x8bbc21 if self.zday else randint(0, 0xFFFFFF))
-        embed.set_author(name="NationStates Z-Day" if self.zday else "NationStates",
-                         url="https://www.nationstates.net/")
+        embed = discord.Embed(
+            title=data["fullname"],
+            url="https://www.nationstates.net/nation={}".format(data["id"]),
+            description="[{}](https://www.nationstates.net/region={})"
+                        " | {} {} | Founded {}".format(
+                            data["region"],
+                            data["region"].lower().replace(" ", "_"),
+                            self._illion(data["population"]),
+                            data["demonym2plural"], data["founded"]),
+            colour=0x8bbc21 if self.zday else randint(0, 0xFFFFFF))
+        embed.set_author(name="NationStates Z-Day" if self.zday else
+                         "NationStates", url="https://www.nationstates.net/")
         embed.set_thumbnail(url=data["flag"])
         if self.zday:
-            embed.add_field(name=data["zombie"]["zaction"].title() if data["zombie"]["zaction"] else "No Action", value="Survivors: {} | Zombies: {} | Dead: {}".format(self._illion(data["zombie"]["survivors"]), self._illion(data["zombie"]["zombies"]), self._illion(data["zombie"]["dead"])), inline=False)
-        embed.add_field(name=data["category"], value="{}\t|\t{}\t|\t{}".format(data["freedom"]["civilrights"], data["freedom"]["economy"], data["freedom"]["politicalfreedom"]), inline=False)
-        embed.add_field(name=data["unstatus"], value="{} | {:d} influence ({})".format(endo, int(float(data["census"]["scale"][0]["score"])), data["influence"]), inline=False)
+            embed.add_field(
+                name=data["zombie"]["zaction"].title() if
+                data["zombie"]["zaction"] else "No Action",
+                value="Survivors: {} | Zombies: {} | Dead: {}".format(
+                    self._illion(data["zombie"]["survivors"]),
+                    self._illion(data["zombie"]["zombies"]),
+                    self._illion(data["zombie"]["dead"])), inline=False)
+        embed.add_field(name=data["category"], value="{}\t|\t{}\t|\t{}".format(
+            data["freedom"]["civilrights"], data["freedom"]["economy"],
+            data["freedom"]["politicalfreedom"]), inline=False)
+        embed.add_field(name=data["unstatus"],
+                        value="{} | {:d} influence ({})".format(
+                            endo,
+                            int(float(data["census"]["scale"][0]["score"])),
+                            data["influence"]), inline=False)
         embed.set_footer(text="Last active {}".format(data["lastactivity"]))
         try:
             await self.bot.say(embed=embed)
         except discord.HTTPException:
-            await self.bot.say("I need the `Embed links` permission to send this")
+            await self.bot.say(
+                "I need the `Embed links` permission to send this")
 
     @commands.command(pass_context=True)
-    async def region(self, ctx, *, region):  # API requests: 3; non-API requests: 1
+    # API requests: 3; non-API requests: 1
+    async def region(self, ctx, *, region):
         """Retrieves general info about a specified NationStates region"""
         self._checks(ctx.prefix)
-        if region[0] == region[-1] and region.startswith("\""):
-            region = region[1:-1]
-        data = self.nsapi.api("delegate", "delegateauth", "flag", "founded", "founder", "name", "numnations", "power", "tags", "zombie" if self.zday else "name", region=region).collect()
+        region.strip("\"")
+        try:
+            data = await self.nsapi.api("delegate", "delegateauth", "flag",
+                                        "founded", "founder", "name",
+                                        "numnations", "power", "tags", "zombie"
+                                        if self.zday else "name", region=region
+                                        )
+        except ValueError:
+            embed = discord.Embed(title=region.replace("_", " ").title(),
+                                  description="This region does not exist.")
+            embed.set_author(name="NationStates",
+                             url="https://www.nationstates.net/")
+            try:
+                return await self.bot.say(embed=embed)
+            except discord.HTTPException:
+                await self.bot.say(
+                    "I need the `Embed links` permission to send this")
         if data["delegate"] == "0":
             data["delegate"] = "No Delegate"
         else:
-            deldata = self.nsapi.api("fullname", "influence", self.nsapi.shard(
-                "census", scale="65+66", mode="score"), nation=data["delegate"]).collect()
+            deldata = await self.nsapi.api("fullname", "influence",
+                                           self.nsapi.shard(
+                                               "census", scale="65+66",
+                                               mode="score"),
+                                           nation=data["delegate"])
             endo = int(float(deldata["census"]["scale"][1]["score"]))
             if endo == 1:
                 endo = "{:d} endorsement".format(endo)
             else:
                 endo = "{:d} endorsements".format(endo)
-            data["delegate"] = "[{}](https://www.nationstates.net/nation={}) | {} | {:d} influence ({})".format(deldata[
-                "fullname"], data["delegate"], endo, int(float(deldata["census"]["scale"][0]["score"])), deldata["influence"])
+            data["delegate"] = "[{}](https://www.nationstates.net/nation={})" \
+                               " | {} | {:d} influence ({})".format(
+                                   deldata["fullname"], data["delegate"], endo,
+                                   int(float(
+                                       deldata["census"]["scale"]
+                                       [0]["score"])),
+                                   deldata["influence"])
         if "X" in data["delegateauth"]:
             data["delegateauth"] = ""
         else:
@@ -88,19 +144,32 @@ class NSStandard:
             data["founder"] = "No Founder"
         else:
             try:
-                data["founder"] = "[{}](https://www.nationstates.net/nation={})".format(
-                    self.nsapi.api("fullname", nation=data["founder"]).collect()["fullname"], data["founder"])
+                data["founder"] = "[{}](https://www.nationstates.net/" \
+                                  "nation={})".format((await self.nsapi.api(
+                                      "fullname", nation=data["founder"]))
+                                      ["fullname"], data["founder"])
             except ValueError:
-                data["founder"] = "{} (Ceased to Exist)".format(data[
-                    "founder"].replace("_", " ").capitalize())
-        embed = discord.Embed(title=data["name"], url="https://www.nationstates.net/region={}".format(data["id"]), description="[{} nations](https://www.nationstates.net/region={}/page=list_nations) | Founded {} | Power: {}".format(
-            data["numnations"], data["id"], data["founded"], data["power"]), colour=0x8bbc21 if self.zday else randint(0, 0xFFFFFF))
-        embed.set_author(name="NationStates Z-Day" if self.zday else "NationStates",
-                         url="https://www.nationstates.net/")
+                data["founder"] = "{} (Ceased to Exist)".format(
+                    data["founder"].replace("_", " ").capitalize())
+        embed = discord.Embed(
+            title=data["name"],
+            url="https://www.nationstates.net/region={}".format(data["id"]),
+            description="[{} nations](https://www.nationstates.net/region={}"
+                        "/page=list_nations) | Founded {} | Power: {}".format(
+                            data["numnations"], data["id"], data["founded"],
+                            data["power"]),
+            colour=0x8bbc21 if self.zday else randint(0, 0xFFFFFF))
+        embed.set_author(name="NationStates Z-Day" if self.zday else
+                         "NationStates", url="https://www.nationstates.net/")
         if data["flag"]:
             embed.set_thumbnail(url=data["flag"])
         if self.zday:
-            embed.add_field(name="Zombies", value="Survivors: {} | Zombies: {} | Dead: {}".format(self._illion(data["zombie"]["survivors"]), self._illion(data["zombie"]["zombies"]), self._illion(data["zombie"]["dead"])), inline=False)
+            embed.add_field(
+                name="Zombies",
+                value="Survivors: {} | Zombies: {} | Dead: {}".format(
+                    self._illion(data["zombie"]["survivors"]),
+                    self._illion(data["zombie"]["zombies"]),
+                    self._illion(data["zombie"]["dead"])), inline=False)
         embed.add_field(name="Founder", value=data["founder"], inline=False)
         embed.add_field(name="Delegate{}".format(
             data["delegateauth"]), value=data["delegate"], inline=False)
@@ -110,7 +179,8 @@ class NSStandard:
         try:
             await self.bot.say(embed=embed)
         except discord.HTTPException:
-            await self.bot.say("I need the `Embed links` permission to send this")
+            await self.bot.say(
+                "I need the `Embed links` permission to send this")
 
     def _illion(self, num: str):
         num = int(num)
@@ -125,7 +195,9 @@ class NSStandard:
             self.nsapi = self.bot.get_cog("NSApi")
             if self.nsapi is None:
                 raise RuntimeError(
-                    "NSApi cog is not loaded. Please ensure it is:\nInstalled: {p}cog install NationCogs nsapi\nLoaded: {p}load nsapi".format(p=prefix))
+                    "NSApi cog is not loaded. Please ensure it is:\n"
+                    "Installed: {p}cog install NationCogs nsapi\n"
+                    "Loaded: {p}load nsapi".format(p=prefix))
         self.nsapi.check_agent()
 
 

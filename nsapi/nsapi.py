@@ -1,8 +1,9 @@
-try:
-    import nationstates as ns
-except ImportError:
-    ns = None
 import os
+from time import time
+from asyncio import wait_for, TimeoutError
+from functools import partial
+from nationstates import Api, Shard
+from nationstates.NScore.exceptions import NotFound, RateLimitCatch
 
 import discord
 from discord.ext import commands
@@ -18,50 +19,71 @@ class NSApi:
     def __init__(self, bot):
         self.bot = bot
         self.settings = dataIO.load_json("data/nsapi/settings.json")
-        self._api = ns.Api(self.settings["AGENT"])
+        self._api = Api()
 
     @commands.command(pass_context=True)
     @checks.is_owner()
-    async def agent(self, ctx, *, agent=None):  # API requests: 0; non-API requests: 0
+    # API requests: 0; non-API requests: 0
+    async def agent(self, ctx, *, agent=None):
         """Gets or sets the user agent for use with the NationStates API
 
-        Use an informative agent, like an email address, nation name, or both. Contact the cog creator (and unload this cog) if you get any relevant emails or telegrams."""
-        if agent is None:
-            await self.bot.whisper("```User agent: {}```".format(self._api.user_agent))
+        Use an informative agent, like an email address, nation name, or both.
+        Contact the cog creator (and unload this cog) if you get any relevant
+        emails or telegrams."""
+        if not agent:
+            await self.bot.whisper("```User agent: {}```".format(
+                self.settings["AGENT"]))
             await send_cmd_help(ctx)
         else:
             self.settings["AGENT"] = agent
             dataIO.save_json("data/nsapi/settings.json", self.settings)
-            self._api.user_agent = self.settings["AGENT"]
-            await self.bot.say("```New user agent: {}```".format(self._api.user_agent))
+            await self.bot.say("```New user agent: {}```".format(
+                self.settings["AGENT"]))
 
     def check_agent(self):
-        if self._api.user_agent is None:
+        if not self.settings["AGENT"]:
             raise RuntimeError(
                 "User agent is not yet set! Set it with \"[p]agent\" first.")
 
     def shard(self, shard: str, **kwargs):
-        return ns.Shard(shard, **kwargs)
+        return Shard(shard, **kwargs)
 
-    def api(self, *shards, **kwargs):
+    async def api(self, *shards, **kwargs):
+        self.check_agent()
+        args = {"shard": list(shards), "user_agent": self.settings["AGENT"],
+                "auto_load": True, "version": "9", "use_error_xrls": True,
+                "use_error_rl": True}
         try:
             if not kwargs:
-                return self._api.get_world(list(shards))
-            if len(kwargs) != 1:
+                args["api"] = "world"
+            elif len(kwargs) != 1:
                 raise TypeError("Multiple **kwargs: {}".format(kwargs))
-            nation = kwargs.pop("nation", None)
-            region = kwargs.pop("region", None)
-            council = kwargs.pop("council", None)
-            if kwargs:
-                raise TypeError("Unexpected **kwargs: {}".format(kwargs))
-            if nation:
-                return self._api.get_nation(nation, list(shards))
-            if region:
-                return self._api.get_region(region, list(shards))
-            if council:
-                return self._api.get_wa(council, list(shards))
-        except ns.NScore.exceptions.NotFound as e:
+            else:
+                nation = kwargs.pop("nation", None)
+                region = kwargs.pop("region", None)
+                council = kwargs.pop("council", None)
+                if kwargs:
+                    raise TypeError("Unexpected **kwargs: {}".format(kwargs))
+                if nation:
+                    args.update(api="nation", value=nation)
+                if region:
+                    args.update(api="region", value=region)
+                if council:
+                    args.update(api="wa", value=council)
+            part = partial(self._api.request, **args)
+            try:
+                ret = await wait_for(self.bot.loop.run_in_executor(
+                    None, part), timeout=10)
+                return ret.collect()
+            except TimeoutError:
+                await self.bot.say("Error: Request timed out.")
+                raise
+        except NotFound as e:
             raise ValueError(*e.args) from e
+        except RateLimitCatch as e:
+            await self.bot.say(" ".join(e.args))
+            retry_after = 30. - (time() - min(self._api.get_ratelimit()))
+            raise commands.CommandOnCooldown(30, retry_after)
 
 
 def check_folders():
@@ -75,13 +97,10 @@ def check_files():
     fil = "data/nsapi/settings.json"
     if not dataIO.is_valid_json(fil):
         print("Creating default {}...".format(fil))
-        dataIO.save_json(fil, {"AGENT": ""})
+        dataIO.save_json(fil, {"AGENT": None})
 
 
 def setup(bot):
-    if ns is None:
-        raise RuntimeError(
-            "NationStates API wrapper not found.\nPlease update your bot from the launcher and/or install the wrapper:\n{p}debug bot.pip_install(\"nationstates\")".format(p=bot.settings.prefixes[0]))
     check_folders()
     check_files()
     bot.add_cog(NSApi(bot))

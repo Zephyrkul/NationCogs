@@ -25,61 +25,78 @@ class NSEndorse:
         self.locks = {"ne": Lock(), "nne": Lock()}
 
     @commands.command(pass_context=True)
-    async def ne(self, ctx, *, wanation):  # API requests: 1; non-API requests: 0
+    # API requests: 1; non-API requests: 0
+    async def ne(self, ctx, *, wanation):
         """Nations Endorsing the specified WA nation"""
         self._checks(ctx.prefix)
-        await self._file(ctx.message.channel, self._endocheck(self.nsapi.api("endorsements", "wa", nation=wanation).collect())["endorsements"].replace(",", self.delim), "ne")
+        await self._file(ctx.message.channel,
+                         self._endocheck(await self.nsapi.api(
+                             "endorsements", "wa", nation=wanation))
+                         ["endorsements"].replace(",", self.delim), "ne")
 
     @commands.command(pass_context=True)
-    async def nec(self, ctx, *, wanation):  # API requests: 1; non-API requests: 0
+    # API requests: 1; non-API requests: 0
+    async def nec(self, ctx, *, wanation):
         """Number of Nations Endorsing (Count) the specified WA nation"""
         self._checks(ctx.prefix)
-        await self.bot.say(self._endocheck(self.nsapi.api("censusscore-66", "wa", nation=wanation))["censusscore"]["text"])
+        await self.bot.say(self._endocheck(await self.nsapi.api(
+            "censusscore-66", "wa", nation=wanation))["censusscore"]["text"])
 
     @commands.command(pass_context=True)
-    async def nne(self, ctx, *, wanation):  # API requests: 3; non-API requests: 0
+    # API requests: 3; non-API requests: 0
+    async def nne(self, ctx, *, wanation):
         """Nations Not Endorsing the specified WA nation"""
         self._checks(ctx.prefix)
         endos = self._endocheck(
-            self.nsapi.api("endorsements", "region", "wa", nation=wanation))
-        nne = self._region_wa(endos["region"]).difference(
+            await self.nsapi.api("endorsements", "region", "wa",
+                                 nation=wanation))
+        nne = (await self._region_wa(endos["region"])).difference(
             "{},{}".format(endos["endorsements"], endos["id"]).split(","))
         await self._file(ctx.message.channel, self.delim.join(nne), "nne")
 
     @commands.command(pass_context=True)
-    async def nnec(self, ctx, *, wanation):  # API requests: 3; non-API requests: 0
+    # API requests: 3; non-API requests: 0
+    async def nnec(self, ctx, *, wanation):
         """Number of Nations Not Endorsing (Count) the specified WA nation"""
         self._checks(ctx.prefix)
         endos = self._endocheck(
-            self.nsapi.api("censusscore-66", "region", "wa", nation=wanation))
-        nne = len(self._region_wa(endos["region"])) - \
+            await self.nsapi.api("censusscore-66", "region", "wa",
+                                 nation=wanation))
+        nne = len(await self._region_wa(endos["region"])) - \
             float(endos["censusscore"]["text"]) - 1
         await self.bot.say("{}.00".format(int(nne)))
 
     @commands.command(pass_context=True)
-    async def spdr(self, ctx, *, nation):  # API requests: 1; non-API requests: 0
+    # API requests: 1; non-API requests: 0
+    async def spdr(self, ctx, *, nation):
         """The Soft Power Distribution Rating of the specified nation"""
         self._checks(ctx.prefix)
-        await self.bot.say(self.nsapi.api("censusscore-65", nation=nation).collect()["censusscore"]["text"])
+        await self.bot.say((await self.nsapi.api(
+            "censusscore-65", nation=nation))["censusscore"]["text"])
 
     async def _file(self, channel: discord.Channel, text: str, method: str):
         if len(text) < 1024:
             await self.bot.send_message(channel, text)
         else:
-            async with self.locks[method]:  # Not thread-safe, only coroutine-safe
-                async with aiofiles.open("data/nsendorse/{}.txt".format(method), mode="w") as file:
+            async with self.locks[method]:
+                # Not thread-safe, only coroutine-safe
+                async with aiofiles.open(
+                        "data/nsendorse/{}.txt".format(method),
+                        mode="w") as file:
                     await file.write(text)
-                await self.bot.send_file(channel, "data/nsendorse/{}.txt".format(method))
+                await self.bot.send_file(
+                    channel, "data/nsendorse/{}.txt".format(method))
 
-    def _region_wa(self, region):
-        rnations = self.nsapi.api("nations", region=region)
-        wamembers = set(self.nsapi.api(
-            "members", council="1").collect()["members"].split(","))
-        return wamembers.intersection(rnations.collect()["nations"].split(":"))
+    async def _region_wa(self, region):
+        rnations = await self.nsapi.api("nations", region=region)
+        wamembers = set((await self.nsapi.api(
+            "members", council="1"))["members"].split(","))
+        return wamembers.intersection(rnations["nations"].split(":"))
 
     def _endocheck(self, data):
         if data["unstatus"] == "Non-member":
-            raise TypeError("Nation {} is not in the WA.".format(data["id"]))
+            raise commands.BadArgument("Nation {} is not in the WA.".format(
+                data["id"]))
         return data
 
     def _checks(self, prefix):
@@ -87,7 +104,9 @@ class NSEndorse:
             self.nsapi = self.bot.get_cog('NSApi')
             if self.nsapi is None:
                 raise RuntimeError(
-                    "NSApi cog is not loaded. Please ensure it is:\nInstalled: {p}cog install NationCogs nsapi\nLoaded: {p}load nsapi".format(p=prefix))
+                    "NSApi cog is not loaded. Please ensure it is:\n"
+                    "Installed: {p}cog install NationCogs nsapi\n"
+                    "Loaded: {p}load nsapi".format(p=prefix))
         self.nsapi.check_agent()
 
 
