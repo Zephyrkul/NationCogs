@@ -16,7 +16,7 @@ class Theme:
         self._themes = dataIO.load_json("data/themes/themes.json")
 
     @commands.command(pass_context=True, no_pm=True)
-    async def theme(self, ctx, user: discord.Member=None):
+    async def theme(self, ctx, *, user: discord.Member=None):
         """Plays one of your themes, or one of the specified user's."""
         if self.bot.get_cog("Audio") is None:
             return await self.bot.say("This cog requires the Audio cog.")
@@ -48,7 +48,7 @@ class Theme:
                 await self.bot.say("```{}```".format(message))
 
     @themes.command(name="add", pass_context=True)
-    async def _themes_add(self, ctx, theme):
+    async def _themes_add(self, ctx, *, theme):
         """Adds the specified theme to your themes."""
         theme = theme.strip("<>")
         audio = self.bot.get_cog("Audio")
@@ -62,7 +62,7 @@ class Theme:
         await self.bot.say("Theme added.")
 
     @themes.command(name="remove", pass_context=True)
-    async def _themes_remove(self, ctx, theme):
+    async def _themes_remove(self, ctx, *, theme):
         """Removes the specified theme from your themes."""
         theme = theme.strip("<>")
         try:
