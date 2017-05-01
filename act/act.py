@@ -45,7 +45,6 @@ class Act:
             act.dispatch_error(e, ctx)
         else:
             self.bot.dispatch('command_completion', act, ctx)
-        print(ctx.message.author, [p(ctx) for p in act.checks])
 
 
 def setup(bot):
