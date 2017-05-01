@@ -11,7 +11,10 @@ class Act:
 
     @commands.command(pass_context=True)
     async def act(self, ctx, *, user: discord.Member=None):
-        """Acts the specified user."""
+        """Acts on the specified user.
+
+        Modifying this command (e.g. through permissions) will affect
+        all "fake" commands enabled through this cog."""
         user = user if user else ctx.message.author
         action = ctx.invoked_with
         if not self.engine.singular_noun(action):
@@ -26,18 +29,23 @@ class Act:
                  ctx.command.callback == self.act.callback):
             return
         act = copy(self.act)
-        singular = self.engine.singular_noun(ctx.invoked_with)
-        act.name = ctx.invoked_with
-        act.help = (ctx.invoked_with if singular else self.engine.plural_noun(
-            ctx.invoked_with)).title() + self.act.help[4:]
         # proper event dispatching
         self.bot.dispatch("command", act, ctx)
         try:
             await act.invoke(ctx)
         except commands.CommandError as e:
+            if isinstance(e, commands.MissingRequiredArgument) or \
+                    isinstance(e, commands.BadArgument):
+                # hack help text
+                singular = self.engine.singular_noun(ctx.invoked_with)
+                act.name = ctx.invoked_with
+                act.help = (ctx.invoked_with if singular else
+                            self.engine.plural_noun(
+                                ctx.invoked_with)).title() + self.act.help[7:27]
             act.dispatch_error(e, ctx)
         else:
             self.bot.dispatch('command_completion', act, ctx)
+        print(ctx.message.author, [p(ctx) for p in act.checks])
 
 
 def setup(bot):
