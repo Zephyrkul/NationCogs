@@ -28,6 +28,8 @@ class Act:
                 (not isinstance(error, commands.CheckFailure) or
                  ctx.command.callback == self.act.callback):
             return
+        if not ctx.invoked_with.isalpha():
+            return
         act = copy(self.act)
         # proper event dispatching
         self.bot.dispatch("command", act, ctx)
