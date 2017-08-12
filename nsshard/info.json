@@ -1,8 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "`[p]shard`. Quotes *are* needed if the nation or region name contains spaces.",
-    "NAME" : "NSShard",
-    "SHORT" : "Gets specific information from the NationStates API.",
-    "DESCRIPTION" : "Gets information from NationStates, pretties it up a little bit, and posts the result.",
-    "TAGS" : ["nationstates", "utility"]
-}

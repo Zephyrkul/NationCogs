@@ -1,9 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "The cog that lets you do literally anything to anyone! Just do any command you like followed by a member of your server, and the bot takes care of the rest!",
-    "NAME" : "Act",
-    "SHORT" : "This cog is very dumb.",
-    "DESCRIPTION" : "The cog that lets you do literally anything to anyone!",
-    "REQUIREMENTS" : ["inflect"],
-    "TAGS" : ["fun", "dumb", "like so dumb"]
-}

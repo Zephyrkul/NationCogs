@@ -1,9 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "Gets endorsement info about the specified nation. Quotes are *not* needed for these cogs.",
-    "NAME" : "NSEndorse",
-    "SHORT" : "Friar Tuck-like endorsement commands.",
-    "DESCRIPTION" : "Allows you to get data on nations endorsing and not endorsing you. [p]neb and [p]nneb are not yet available.",
-    "REQUIREMENTS" : ["aiofiles"],
-    "TAGS" : ["nationstates", "utility"]
-}

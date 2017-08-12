@@ -1,8 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "SHORT" : "Allows users to set their own themes",
-    "DESCRIPTION" : "Theeeeemes",
-    "NAME" : "Theme",
-    "TAGS" : ["music", "audio", "fun"],
-    "INSTALL_MSG" : "Usage: `[p]theme`, `[p]themes`. Requires the Audio cog to function."
-}

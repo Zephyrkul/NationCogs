@@ -1,8 +1,0 @@
-{
-    "AUTHOR" : "Zephyrkul",
-    "INSTALL_MSG" : "`[p]ga` or `[p]sc` to get resolution data from the General Assembly or Security Council, respectively.",
-    "NAME" : "NSAssembly",
-    "SHORT" : "Gets WA resolution information.",
-    "DESCRIPTION" : "Gets WA information, pretties it up, and embeds it.",
-    "TAGS" : ["nationstates", "utility"]
-}
