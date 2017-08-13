@@ -1,141 +1,77 @@
-# imports
+from enum import Enum
+from collections import deque
+import time
+import bisect
+import functools
+import inspect
+import zlib
+from urllib.parse import urlparse, urlunparse
+from aiohttp import ClientSession
+from aiohttp.errors import HttpProcessingError
+from lxml.etree import XMLPullParser, HTMLPullParser
 
 
-# exceptions.py
+SCHEME = "https"
+NETLOC = "www.nationstates.net"
+APIPATH = "/cgi-bin/api.cgi"
 
 
 class RateLimitException(Exception):
+    """Exception raised when exceeding the NationStates rate limit."""
+
     def __init__(self, retry_after: float):
         super().__init__(retry_after)
         self.retry_after = retry_after
 
 
-# ratelimit.py
-
-
-import time
-import bisect
-from aiohttp import HTTPException
-
-
-class _RateLimit:
+class _RateLimit(object):
     def __init__(self):
-        self.times = []
         self.xrlrs = 0
-        self.block = (50, 30)
-        self.limit = self.block[0] - 2
-        self.session = None
+        self.apitimes = deque()
+        self.htmltimes = deque()
+        self.apiblock = (50, 30)
+        self.htmlblock = (10, 60)
 
-    def initialize(self, agent: str, loop):
-        self.session = aiohttp.ClientSession(loop=loop, headers={
-            "User-Agent": agent})
-
-    def __call__(self, func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            if "session" in kwargs:
-                raise TypeError("kwarg 'session' defined")
+    def __call__(self, function):
+        @functools.wraps(function)
+        async def _wrapper(*args, **kwargs):
+            instance = args[0]
+            if APIPATH in instance.url:
+                times = self.apitimes
+                block = self.apiblock
+            else:
+                times = self.htmltimes
+                block = self.htmlblock
             timestamp = time.time()
-            self.times = self.times[bisect.bisect_left(
-                self.times, timestamp - 30):]
-            if len(self.times) > self.limit:
-                if self.times:
-                    raise RateLimitException(
-                        30 - (timestamp - self.times[0]))
-                else:
-                    self.times = [timestamp] * self.limit
-                    raise RateLimitException(30.)
-            kwargs["session"] = self.session
+            del times[:bisect.bisect_left(times, timestamp - block[1])]
+            if len(times) > block[0]:
+                raise RateLimitException(block[1] - (timestamp - times[0]))
             try:
-                data = await func(*args, **kwargs)
-            except HTTPException as e:
-                self.xrlrs = int(e.headers["X-ratelimit-requests-seen"])
-                self.times.extend([time.time()] * max(
-                    (1, self.xrlrs - len(self.times))))
+                headers = await function(*args, **kwargs)
+            except HttpProcessingError as e:
+                self._addtime(times, e.headers)
                 raise
             else:
-                self.xrlrs = int(data.pop("headers")[
-                    "X-ratelimit-requests-seen"])
-                self.times.extend([time.time()] * max(
-                    (1, self.xrlrs - len(self.times))))
-            return data
-        return wrapper
+                self._addtime(times, headers)
+        return _wrapper
+
+    def _addtime(self, times, headers):
+        timestamp = time.time()
+        try:
+            xrlrs = int(headers["X-ratelimit-requests-seen"])
+        except KeyError:
+            xrlrs = None
+        if xrlrs:
+            times.extend([timestamp] * max((1, xrlrs - len(times))))
+        else:
+            times.append(timestamp)
 
 
 RATELIMITED = _RateLimit()
 
 
-# api.py
-
-
-import inspect
-import zlib
-from xml.etree.ElementTree import XMLPullParser
-import aiohttp
-
-
-URL = "https://www.nationstates.net/"
-API_URL = "cgi-bin/api.cgi"
-CHUNK = 262144
-
-
-def urlify(s: str):
-    return s.lower().replace(" ", "_")
-
-
-def api(url: str, *args: str, head: bool = False, session: aiohttp.ClientSession = aiohttp.ClientSession(), **kwargs) -> _Request:
-    if not args:
-        raise TypeError("No *args provided.")
-    if not kwargs:
-        raise TypeError("No **kwargs provided.")
-    kwargs_san = {}
-    for k, v in kwargs.items():
-        if isinstance(v, str):
-            if k.lower() in kwargs_san:
-                raise TypeError("Conflicting **kwargs.")
-            kwargs_san[k.lower()] = urlify(v)
-        else:
-            if head:
-                raise TypeError("Processor functions not allowed in head requests.")
-            if k.upper() in kwargs_san:
-                raise TypeError("Conflicting **kwargs.")
-            if not callable(v) and not inspect.isawaitable(v):
-                raise TypeError("Invalid **kwargs: " + repr(v))
-            kwargs_san[k.upper()] = v
-    kwargs = kwargs_san
-    if url.startswith("?"):
-        url = "{}{}{}".format(URL, API_URL, url)
-    elif url.startswith("q="):
-        # Assume World API
-        url = "{}{}?{}".format(URL, API_URL, url)
-    elif not url.startswith(URL):
-        url = URL + url
-    if "q=" not in url and "a=" not in url:
-        url = "{}{}q=".format(url, "&" if "?" in url else "?")
-    processors = {}
-    for s in args:
-        url = "{}{}{}".format(url, "+" if not url.endswith("q=") else "", s)
-    join = ";" if "q=" in url else "&"
-    for k, v in kwargs.items():
-        if isinstance(v, str):
-            url = "{}{}{}={}".format(url, join, k, v)
-        else:
-            processors[k] = v
-    if "?a=sendTG" in url:
-        raise NotImplementedError("The Telegram API is currently not supported.")
-    if API_URL in url:
-        return _request_api(url, processors, head, session)
-    else:
-        return _Request(url, processors, head, session)
-
-
-@RATELIMITED
-def _request_api(url: str, processors: dict, head: bool, session: aiohttp.ClientSession) -> _Request:
-    return _Request(url, processors, head, session)
-
-
 class _Request:
-    def __init__(self, url: str, processors: dict, head: bool, session: aiohttp.ClientSession):
+    def __init__(self, url: str, processors: dict, head: bool, session: ClientSession):
         self.url = url
         self.processors = processors
         self.head = head
@@ -143,62 +79,162 @@ class _Request:
         self.entered = False
         self.response = None
         self.dobj = None
-        self.xpp = None
+        self.parser = None
+        self.charset = None
         self.events = None
 
     def __aiter__(self):
         return self
 
-    async def __anext__(self):
+    async def __anext__(self) -> tuple:
         try:
             if self.entered:
                 await self._nextiter()
             else:
-                emit = await self._enteriter()
                 self.entered = True
-                if emit is not None:
-                    return emit
-                else:
-                    await self._nextiter()
+                return await self._enteriter()
         except StopAsyncIteration:
+            if self.parser:
+                self.parser.close()
             await self.response.release()
             raise
         except:
-            self.response.close()
+            if self.parser:
+                self.parser.close()
+            if self.response:
+                self.response.close()
             raise
 
-    async def _enteriter(self):
-        if self.head:
-            async with self.session.head(self.url) as response:
-                return ("HEAD", response.headers)
-        self.response = await self.session.get(self.url)
+    @RATELIMITED
+    async def _request(self) -> dict:
+        self.response = await self.session.head(self.url) if self.head else await self.session.get(self.url)
         self.response.raise_for_status()
-        self.dobj = zlib.decompressobj(16 + zlib.MAX_WBITS) if self.response.headers["Content-Type"] == "application/x-gzip" else None
-        self.xpp = XMLPullParser(["end"]) if self.dobj or "text/xml" in self.response.headers["Content-Type"] else None
-        if not self.xpp:
-            self.head = True
-            return ("TEXT", await response.text())
+        return self.response.headers
 
-    async def _nextiter(self):
+    async def _enteriter(self) -> tuple:
+        await self._request()
+        contenttype = self.response.headers["Content-Type"].split("; ")
+        self.dobj = zlib.decompressobj(16 + zlib.MAX_WBITS) if contenttype[0] == "application/x-gzip" else None
+        self.parser = XMLPullParser(["end"]) if self.dobj or contenttype[0] == "text/xml" else \
+            HTMLPullParser(["end"]) if contenttype[0] == "text/html" else None
+        self.charset = contenttype[1][contenttype[1].index("=") + 1:] if len(contenttype) > 1 else "utf-8"
+        if self.head:
+            return ("@HEAD", self.response.headers)
+        else:
+            return await self._nextiter()
+
+    async def _nextiter(self) -> tuple:
         if self.head:
             raise StopAsyncIteration
+        if not self.parser:
+            self.head = True
+            return ("#BYTES", await self.response.read())
         if self.events:
             try:
                 element = next(self.events)[1]
             except StopIteration:
                 pass
             else:
+                if not self.processors:
+                    return (element.tag, element)
                 if element.tag in self.processors:
-                    process = self.processors[element.tag]
+                    process = self.processors[element.tag.lower()]
+                    if process is None:
+                        return (element.tag, element)
                     if inspect.isawaitable(process):
                         return (element.tag, await process(element))
-                    else:
-                        return (element.tag, process(element))
-        content = await self.response.content.read(CHUNK)
+                    return (element.tag, process(element))
+        content = await self.response.content.readany()
         if not content:
             raise StopAsyncIteration
         if self.dobj:
             content = self.dobj.decompress(content)
-        self.xpp.feed(content.decode("utf-8"))
-        self.events = self.xpp.read_events()
+        self.parser.feed(content.decode(self.charset))
+        self.events = self.parser.read_events()
         return await self._nextiter()
+
+
+def request(url: str, *args: str, head: bool=False, session: ClientSession=ClientSession(), **kwargs) -> _Request:
+    """Forms an HTTP GET or HEAD request to the NationStates site or API.
+
+    While this method is synchronous, it returns an asynchronous iterator.
+    So, while you *can* do the following::
+
+        request = nationstates.request(...)
+
+    You will still have to use asynchronous iteration to get the actual data::
+
+        async for event, result in request:
+            ...
+
+    The actual request will not be opened until it is iterated over; thus you
+    can prepare several requests ahead of time and space out the
+    requests themselves.
+
+    This wrapper supports the API ratelimit automatically.
+
+    Parameters:
+        url: The URL to request.
+            If `url` starts with `"?"`, it is considered an API request.
+            If `url` starts with `"q="`, it is considered a World API request.
+            Otherwise, the NationStates base site is prepended if absent.
+        *args: The shards to request from the NationStates API.
+            If `url` does not lead to an API request, these are ignored.
+
+    Keyword Arguments:
+        head: Make an HTTP HEAD request instead if this is True.
+        session:
+            The `ClientSession` to use. Defaults to a global session.
+        **kwargs: Keyword arguments.
+            If the value is a String, assume it's a URL parameter.
+            If the value is callable or awaitable, assume it's a processor.
+            In the latter case, the iterator will take any HTML / XML Elements
+            matching the keyword key and pass the Element object into
+            the callable / awaitable and call / await it.
+            If None is instead passed, it will return the Element raw.
+            If no processors are specified, all Elements are returned raw.
+
+    Returns:
+        An asynchronous iterator.
+
+    Yields:
+        tuple: A tuple with the event (the requested HTML / XML element or
+            other events) and the processed HTML / XML element.
+    """
+    # Process **kwargs
+    shardkwargs = {}
+    processors = {}
+    for k, v in kwargs.items():
+        k = k.lower()
+        if isinstance(v, str):
+            if k in shardkwargs:
+                raise TypeError("Conflicting **kwargs: {!r} {!r}.".format(v, shardkwargs[k]))
+            shardkwargs[k] = v
+        else:
+            if head:
+                raise TypeError("Processor functions not allowed in head requests.")
+            if k in processors:
+                raise TypeError("Conflicting **kwargs: {!r} {!r}.".format(v, processors[k]))
+            if v is not None and not callable(v) and not inspect.isawaitable(v):
+                raise TypeError("Invalid **kwargs: " + repr(v))
+            processors[k] = v
+    del kwargs
+    # Process url
+    if url.startswith(("q=", "a=")):
+        url = "?" + url
+    url = list(urlparse(url))
+    if "a=sendTG" in url[4]:
+        raise NotImplementedError("The Telegram API is currently not supported.")
+    if url[1] != NETLOC and url[1] != NETLOC[4:]:
+        raise ValueError("I will only request from the NationStates site at " + NETLOC)
+    url[0], url[1], url[2] = SCHEME, NETLOC, url[2] if url[2] else APIPATH
+    queries = url[4].split("&")
+    shardquery = [i for i in range(len(queries)) if queries[i].startswith("q=")]
+    if not shardquery and args:
+        queries.append("q=" + "+".join(args))
+    elif shardquery and args:
+        queries[shardquery[0]] += "+" + "+".join(args))
+    if shardkwargs:
+        queries[-1] += ";".join("{}={}".format(k, v) for k, v in shardkwargs.items())
+    url[4] = "&".join(queries)
+    return _Request(urlunparse(url), processors, head, session)
