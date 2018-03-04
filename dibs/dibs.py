@@ -6,7 +6,7 @@ class Dibs:
     def __init__(self, bot):
         self.bot = bot
 
-    async def on_member_leave(self, member):
+    async def on_member_remove(self, member):
         dibs = await self.bot.wait_for_message(check=self.check)
         await self.bot.add_reaction(dibs, "🏚")
 
