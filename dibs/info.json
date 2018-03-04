@@ -1,0 +1,8 @@
+{
+    "AUTHOR" : "Zephyrkul",
+    "SHORT" : "Marks the first dibs for member leaves.",
+    "DESCRIPTION" : "Reacts with 🏚 when the bot detects a dibs for members leaving.",
+    "NAME" : "Dibs",
+    "TAGS" : ["dibs", "fun"],
+    "INSTALL_MSG" : "Dibs on your stuff."
+}
