@@ -7,8 +7,9 @@ class Dibs:
         self.bot = bot
 
     async def on_member_remove(self, member):
+        emoji = ("🏡", "🏠", "🏚")[3 * member.server.role_hierarchy.index(member.top_role) // len(member.server.roles)]
         dibs = await self.bot.wait_for_message(check=self.check)
-        await self.bot.add_reaction(dibs, "🏚")
+        await self.bot.add_reaction(dibs, emoji)
 
     def check(self, message):
         server = message.server
