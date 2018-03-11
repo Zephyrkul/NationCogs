@@ -1,4 +1,5 @@
 from random import randint
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -100,10 +101,9 @@ class NSStandard:
         region.strip("\"")
         try:
             data = await self.nsapi.api("delegate", "delegateauth", "flag",
-                                        "founded", "founder", "name",
-                                        "numnations", "power", "tags", "zombie"
-                                        if self.zday else "name", region=region
-                                        )
+                                        "founded", "founder", "lastupdate",
+                                        "name", "numnations", "power", "zombie"
+                                        if self.zday else "name", region=region)
         except ValueError:
             embed = discord.Embed(title=region.replace("_", " ").title(),
                                   description="This region does not exist.")
@@ -173,9 +173,8 @@ class NSStandard:
         embed.add_field(name="Founder", value=data["founder"], inline=False)
         embed.add_field(name="Delegate{}".format(
             data["delegateauth"]), value=data["delegate"], inline=False)
-        tags = data["tags"]["tag"]
-        embed.set_footer(text=tags if isinstance(tags, str)
-                         else ", ".join(data["tags"]["tag"]))
+        embed.set_footer(text="Last Updated: {}".format(
+            datetime.utcfromtimestamp(int(data["lastupdate"]))))
         try:
             await self.bot.say(embed=embed)
         except discord.HTTPException:
