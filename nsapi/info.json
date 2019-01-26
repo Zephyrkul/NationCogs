@@ -4,6 +4,6 @@
     "NAME" : "NSApi",
     "SHORT" : "Controls NationStates API access and settings.",
     "DESCRIPTION" : "Controls base settings and access to the NationStates API. Required for all other NS cogs.",
-    "REQUIREMENTS" : ["nationstates"],
+    "REQUIREMENTS" : ["nationstates==1.1.35.66"],
     "TAGS" : ["nationstates", "utility"]
 }
