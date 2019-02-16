@@ -1,6 +1,7 @@
 import os
 from time import time
 from asyncio import wait_for, TimeoutError
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from nationstates import Api, Shard
 from nationstates.NScore.exceptions import NotFound, RateLimitCatch
@@ -8,10 +9,11 @@ from nationstates.NScore.exceptions import NotFound, RateLimitCatch
 import discord
 from discord.ext import commands
 
-from __main__ import send_cmd_help
 from cogs.utils import checks
-
 from .utils.dataIO import dataIO
+
+
+executor = ThreadPoolExecutor(max_workers=1)
 
 
 class NSApi:
@@ -33,7 +35,7 @@ class NSApi:
         if not agent:
             await self.bot.whisper("```User agent: {}```".format(
                 self.settings["AGENT"]))
-            await send_cmd_help(ctx)
+            await self.bot.send_cmd_help(ctx)
         else:
             self.settings["AGENT"] = agent
             dataIO.save_json("data/nsapi/settings.json", self.settings)
@@ -73,7 +75,7 @@ class NSApi:
             part = partial(self._api.request, **args)
             try:
                 ret = await wait_for(self.bot.loop.run_in_executor(
-                    None, part), timeout=10)
+                    executor, part), timeout=10)
                 return ret.collect()
             except TimeoutError:
                 await self.bot.say("Error: Request timed out.")
