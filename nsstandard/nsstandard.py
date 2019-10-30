@@ -72,8 +72,10 @@ class NSStandard:
         embed.set_thumbnail(url=data["flag"])
         if self.zday:
             embed.add_field(
-                name=data["zombie"]["zaction"].title() if
-                data["zombie"]["zaction"] else "No Action",
+                name="{}{}".format(
+                    (data["zombie"]["zaction"] or "No Action").title(),
+                    " (Unintended)" if data["zombie"]["zactionintended"] else "",
+                ),
                 value="Survivors: {} | Zombies: {} | Dead: {}".format(
                     self._illion(data["zombie"]["survivors"]),
                     self._illion(data["zombie"]["zombies"]),
