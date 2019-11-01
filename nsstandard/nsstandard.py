@@ -18,7 +18,7 @@ class NSStandard:
         self.illion = ["million", "billion", "trillion", "quadrillion"]
         # Global flag for Z-Day, since I don't see a way to detect it
         # automatically
-        self.zday = True
+        self.zday = False
 
     @commands.command(pass_context=True)
     # API requests: 1; non-API requests: 1
