@@ -1,4 +1,6 @@
 # NationCogs
+**V2 is dead.** [Upgrade to V3](https://docs.discord.red/en/stable/), and use [my V3 cogs](https://github.com/zephyrkul/FluffyCogs) instead.
+
 NationStates utility cogs (and a fun Skryim guard lines cog) for use with [Red-DiscordBot](https://github.com/Twentysix26/Red-DiscordBot)
 
 If you have any issues, feel free to contact me via Discord through the [Red server](https://discord.gg/red) or via NationStates by telegramming [Darcania](https://www.nationstates.net/page=compose_telegram?tgto=darcania) or posting in [this forum thread](https://forum.nationstates.net/viewtopic.php?f=15&t=402202).
